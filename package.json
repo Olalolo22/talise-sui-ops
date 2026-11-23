@@ -1,0 +1,61 @@
+{
+  "name": "talise-sui-ops",
+  "version": "0.1.0",
+  "description": "Clean-room direct-to-Sui CLI & TypeScript SDK for Talise mainnet payroll, standing orders, permissionless cranking, and wallet auditing.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Olu <https://github.com/Olalolo22>",
+  "homepage": "https://github.com/Olalolo22/talise-sui-ops",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Olalolo22/talise-sui-ops.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Olalolo22/talise-sui-ops/issues"
+  },
+  "keywords": [
+    "talise",
+    "sui",
+    "move",
+    "usdsui",
+    "payroll",
+    "streams",
+    "keeper",
+    "cranker",
+    "treasury",
+    "cli"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "bin": {
+    "talise-sui": "dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json && chmod +x dist/cli.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "cli": "node dist/cli.js",
+    "prepublishOnly": "npm run typecheck && npm run test && npm run build"
+  },
+  "dependencies": {
+    "@mysten/sui": "^2.16.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.2",
+    "vitest": "^3.0.5"
+  }
+}
