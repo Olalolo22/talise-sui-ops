@@ -115,13 +115,14 @@ describe("cranker evaluators & wallet auditor", () => {
         },
       },
       NOW,
-      false,
     );
     expect(cheque?.kind).toBe("cheque_expired");
     expect(cheque?.releasableBase).toBe(5_000_000n);
   });
 
-  it("flags reclaimable TeamStream dust, destroyable terminal streams, and GoalVault owner mismatch", () => {
+  it("flags reclaimable TeamStream dust, GoalVault owner mismatch, and distinguishes v2 vs legacy expired cheques", () => {
+    const v2ChequeId = "0x" + "7".repeat(64);
+    const legacyChequeId = "0x" + "8".repeat(64);
     const report = analyzeWalletObjects({
       address: ME,
       nowMs: NOW,
@@ -152,7 +153,46 @@ describe("cranker evaluators & wallet auditor", () => {
       ],
       standingOrders: [],
       streams: [],
-      cheques: [],
+      cheques: [
+        {
+          legacy: false,
+          rec: {
+            objectId: v2ChequeId,
+            version: "1",
+            typeRepr: `0x097a::cheque::Cheque<${COIN_TYPES.USDSUI}>`,
+            coinType: COIN_TYPES.USDSUI,
+            ownerAddress: null,
+            isShared: true,
+            fields: {
+              id: v2ChequeId,
+              creator: ME,
+              escrow: "2000000",
+              amount: "2000000",
+              expiry_ms: String(NOW - 10),
+              claimed: false,
+            },
+          },
+        },
+        {
+          legacy: true,
+          rec: {
+            objectId: legacyChequeId,
+            version: "1",
+            typeRepr: `0x4ba8::cheque::Cheque<${COIN_TYPES.USDSUI}>`,
+            coinType: COIN_TYPES.USDSUI,
+            ownerAddress: null,
+            isShared: true,
+            fields: {
+              id: legacyChequeId,
+              creator: ME,
+              escrow: "3000000",
+              amount: "3000000",
+              expiry_ms: String(NOW - 10),
+              claimed: false,
+            },
+          },
+        },
+      ],
       goalVaults: [
         {
           objectId: "0x" + "f".repeat(64),
@@ -175,5 +215,11 @@ describe("cranker evaluators & wallet auditor", () => {
     const categories = report.findings.map((f) => f.category);
     expect(categories).toContain("reclaimable_dust");
     expect(categories).toContain("goal_owner_mismatch");
+
+    const v2Finding = report.findings.find((f) => f.objectId === v2ChequeId);
+    const legacyFinding = report.findings.find((f) => f.objectId === legacyChequeId);
+    expect(v2Finding?.recommendedAction).toContain("talise-sui crank --only");
+    expect(legacyFinding?.recommendedAction).toContain("cheque::reclaim");
+    expect(legacyFinding?.recommendedAction).not.toContain("talise-sui crank");
   });
 });

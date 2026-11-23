@@ -101,7 +101,7 @@ export const TALISE_MAINNET_PACKAGES = {
     version: 1,
     originalId: "0x36d80185b4ee5890f95e743142fac280952ab013310a4b609d165f20fa1f26b4",
     latestId: "0x36d80185b4ee5890f95e743142fac280952ab013310a4b609d165f20fa1f26b4",
-    purpose: "Groth16 shielded pool (pilot)",
+    purpose: "Groth16 shielded pool (retired pilot)",
   },
 } as const satisfies Record<string, PackageEntry>;
 

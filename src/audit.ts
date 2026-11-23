@@ -159,16 +159,36 @@ export function analyzeWalletObjects(params: {
   }
 
   for (const { rec, legacy } of chequesCreated) {
-    const exp = evaluateExpiredCheque(rec, params.nowMs, legacy);
-    if (exp) {
+    if (!legacy) {
+      const exp = evaluateExpiredCheque(rec, params.nowMs);
+      if (exp) {
+        findings.push({
+          severity: "actionable",
+          category: "expired_cheque",
+          objectId: rec.objectId,
+          coinType: rec.coinType,
+          amountBase: exp.releasableBase.toString(),
+          summary: "Expired unclaimed Cheque (v2) can be swept back to creator permissionlessly.",
+          recommendedAction: `talise-sui crank --only ${rec.objectId}`,
+        });
+      }
+      continue;
+    }
+
+    const f = rec.fields;
+    const escrow = BigInt(f.escrow ?? "0");
+    const expiry = Number(f.expiry_ms ?? "0");
+    if (!f.claimed && !f.reclaimed && escrow > 0n && expiry > 0 && params.nowMs >= expiry) {
       findings.push({
         severity: "actionable",
         category: "expired_cheque",
         objectId: rec.objectId,
         coinType: rec.coinType,
-        amountBase: exp.releasableBase.toString(),
-        summary: `Expired unclaimed Cheque (${legacy ? "legacy" : "v2"}) can be swept back to creator.`,
-        recommendedAction: `talise-sui crank --only ${rec.objectId}`,
+        amountBase: escrow.toString(),
+        summary:
+          "Expired unclaimed legacy v1 Cheque can be reclaimed by its creator (legacy package has no permissionless reclaim_expired).",
+        recommendedAction:
+          `Sign 0x4ba838c7...::cheque::reclaim from creator wallet for object ${rec.objectId}`,
       });
     }
   }

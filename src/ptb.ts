@@ -387,18 +387,19 @@ export function buildStreamClaimAccruedTx(params: {
   return tx;
 }
 
+/**
+ * Permissionless sweep for expired `talise-pay` v2 cheques (`reclaim_expired`).
+ * Note: legacy v1 (`talise-pay-legacy`) does not expose `reclaim_expired` on
+ * mainnet — expired legacy cheques must be reclaimed by their creator via
+ * `0x4ba838c7...::cheque::reclaim`.
+ */
 export function buildChequeReclaimExpiredTx(params: {
   chequeId: string;
   coinType: string;
-  legacy?: boolean;
   packageId?: string;
 }): Transaction {
   const tx = new Transaction();
-  const pkg =
-    params.packageId ??
-    (params.legacy
-      ? TALISE_MAINNET_PACKAGES.payLegacy.latestId
-      : TALISE_MAINNET_PACKAGES.pay.latestId);
+  const pkg = params.packageId ?? TALISE_MAINNET_PACKAGES.pay.latestId;
   tx.moveCall({
     target: `${pkg}::cheque::reclaim_expired`,
     typeArguments: [params.coinType],

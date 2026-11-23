@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * talise-sui — Clean-room direct-to-Sui CLI for Talise mainnet payroll,
- * standing orders, permissionless cranking, and wallet auditing.
+ * talise-sui — Independent direct-to-Sui CLI built against Talise's public
+ * Sui mainnet Move ABIs for payroll, standing orders, cranking, and auditing.
  *
  * Unofficial community tool built by Olu (Olalolo22), not affiliated with or
  * endorsed by Talise Technologies Limited.
@@ -199,7 +199,7 @@ function emit(flags: Flags, data: unknown, human: () => void): void {
 
 function topHelp(): string {
   return [
-    "talise-sui — Clean-room direct-to-Sui CLI for Talise mainnet payroll, standing orders & cranking",
+    "talise-sui — Independent direct-to-Sui CLI for Talise mainnet payroll, standing orders & cranking",
     "",
     "Usage:",
     "  talise-sui <command> [args] [flags]",
@@ -212,7 +212,7 @@ function topHelp(): string {
     "",
     "Permissionless Mainnet Cranker:",
     "  crank [--dry-run] [--only <id>] [--watch] [--interval-sec 60] [--yes]",
-    "                                       Scan & trigger due StandingOrders, TeamStreams, Streams, and expired Cheques",
+    "                                       Scan & trigger due StandingOrders, TeamStreams, Streams, and expired v2 Cheques",
     "",
     "Payroll & Team Streams (talise-payroll v2, talise-payroll-streams v2, talise v9):",
     "  payroll plan <file.csv> [--tranches N] [--total AMT] [--asset USDsui]",
@@ -260,21 +260,23 @@ function requireSigner() {
   return loadSuiKeypair(process.env.SUI_PRIVATE_KEY ?? "");
 }
 
-async function main(): Promise<void> {
-  const argv = process.argv.slice(2);
-  if (argv.length === 0 || argv[0] === "help" || argv[0] === "--help" || argv[0] === "-h") {
-    process.stdout.write(topHelp() + "\n");
+const HELP_TOKENS = new Set(["help", "--help", "-h"]);
+const VERSION_TOKENS = new Set(["version", "--version", "-v"]);
+
+async function runCli(rawArgs: string[]): Promise<void> {
+  const [cmd, ...rest] = rawArgs;
+  if (!cmd || HELP_TOKENS.has(cmd)) {
+    process.stdout.write(`${topHelp()}\n`);
     return;
   }
-  if (argv[0] === "--version" || argv[0] === "-v" || argv[0] === "version") {
+  if (VERSION_TOKENS.has(cmd)) {
     process.stdout.write(`talise-sui ${pkgVersion()}\n`);
     return;
   }
 
-  const cmd = argv[0]!;
-  const flags = parseArgs(argv.slice(1));
+  const flags = parseArgs(rest);
   if (flags.help) {
-    process.stdout.write(topHelp() + "\n");
+    process.stdout.write(`${topHelp()}\n`);
     return;
   }
 
@@ -737,12 +739,15 @@ async function main(): Promise<void> {
   }
 }
 
-main().catch((err: unknown) => {
-  const msg = err instanceof Error ? err.message : String(err);
-  if (process.argv.includes("--json")) {
-    process.stdout.write(JSON.stringify({ ok: false, error: msg }) + "\n");
+function handleFatalError(err: unknown, jsonMode: boolean): never {
+  const message = err instanceof Error ? err.message : String(err);
+  if (jsonMode) {
+    process.stdout.write(`${JSON.stringify({ status: "error", message })}\n`);
   } else {
-    process.stderr.write(`Error: ${msg}\n`);
+    process.stderr.write(`Error: ${message}\n`);
   }
   process.exit(1);
-});
+}
+
+const rawArgs = process.argv.slice(2);
+runCli(rawArgs).catch((err: unknown) => handleFatalError(err, rawArgs.includes("--json")));

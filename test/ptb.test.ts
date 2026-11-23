@@ -130,10 +130,12 @@ describe("PTB builders", () => {
       buildStreamClaimAccruedTx({ streamId: OBJ, coinType: COIN_TYPES.USDSUI, legacy: true }).getData()
         .commands[0]!.MoveCall!.package,
     ).toBe(TALISE_MAINNET_PACKAGES.payLegacy.latestId);
-    expect(
-      buildChequeReclaimExpiredTx({ chequeId: OBJ, coinType: COIN_TYPES.USDSUI }).getData().commands[0]!
-        .MoveCall!.function,
-    ).toBe("reclaim_expired");
+    const chequeCall = buildChequeReclaimExpiredTx({
+      chequeId: OBJ,
+      coinType: COIN_TYPES.USDSUI,
+    }).getData().commands[0]!.MoveCall!;
+    expect(chequeCall.package).toBe(TALISE_MAINNET_PACKAGES.pay.latestId);
+    expect(chequeCall.function).toBe("reclaim_expired");
 
     const batchTx = buildAtomicBatchSendTx({
       coinType: COIN_TYPES.USDSUI,

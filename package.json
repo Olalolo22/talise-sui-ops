@@ -1,7 +1,7 @@
 {
   "name": "talise-sui-ops",
   "version": "0.1.0",
-  "description": "Clean-room direct-to-Sui CLI & TypeScript SDK for Talise mainnet payroll, standing orders, permissionless cranking, and wallet auditing.",
+  "description": "Independent direct-to-Sui CLI & TypeScript SDK built against Talise's public Sui mainnet Move ABIs for payroll, standing orders, permissionless cranking, and wallet auditing.",
   "type": "module",
   "license": "MIT",
   "author": "Olu <https://github.com/Olalolo22>",

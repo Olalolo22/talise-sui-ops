@@ -20,8 +20,7 @@ export type CrankKind =
   | "team_stream"
   | "stream"
   | "stream_legacy"
-  | "cheque_expired"
-  | "cheque_expired_legacy";
+  | "cheque_expired";
 
 export type CrankCandidate = {
   kind: CrankKind;
@@ -135,11 +134,15 @@ export function evaluatePersonalStream(
   };
 }
 
-/** Pure evaluator: determine if an unclaimed Cheque is expired and sweepable back to creator. */
+/**
+ * Pure evaluator: determine if an unclaimed `talise-pay` v2 Cheque is expired
+ * and permissionlessly sweepable back to its creator via `reclaim_expired`.
+ * Legacy v1 (`0x4ba838c7...::cheque`) only exposes creator-signed `reclaim`
+ * and is therefore excluded from permissionless cranking.
+ */
 export function evaluateExpiredCheque(
   rec: MoveObjectRecord<ChequeFields>,
   nowMs: number,
-  legacy: boolean,
 ): CrankCandidate | null {
   const f = rec.fields;
   if (!rec.coinType || f.claimed || f.reclaimed) return null;
@@ -147,19 +150,18 @@ export function evaluateExpiredCheque(
   const expiry = Number(f.expiry_ms ?? "0");
   if (escrow <= 0n || expiry <= 0 || nowMs < expiry) return null;
   return {
-    kind: legacy ? "cheque_expired_legacy" : "cheque_expired",
+    kind: "cheque_expired",
     objectId: rec.objectId,
     coinType: rec.coinType,
     recipientOrCreator: f.creator,
     releasableBase: escrow,
     dueTranches: 1,
     dueSinceMs: expiry,
-    description: `${legacy ? "legacy " : ""}cheque::reclaim_expired -> creator ${f.creator}`,
+    description: `cheque::reclaim_expired -> creator ${f.creator}`,
     buildTx: () =>
       buildChequeReclaimExpiredTx({
         chequeId: rec.objectId,
         coinType: rec.coinType!,
-        legacy,
       }),
   };
 }
@@ -179,7 +181,7 @@ export async function scanCrankCandidates(
   const maxPerType = opts.maxPerType ?? 200;
   const includeLegacy = opts.includeLegacy !== false;
 
-  const [orders, teamStreams, streams, cheques, legacyStreams, legacyCheques] =
+  const [orders, teamStreams, streams, cheques, legacyStreams] =
     await Promise.all([
       gql.listObjectsByType<StandingOrderFields>(MOVE_STRUCT_TYPES.standingOrder, maxPerType),
       gql.listObjectsByType<TeamStreamFields>(MOVE_STRUCT_TYPES.teamStream, maxPerType),
@@ -187,9 +189,6 @@ export async function scanCrankCandidates(
       gql.listObjectsByType<ChequeFields>(MOVE_STRUCT_TYPES.cheque, maxPerType),
       includeLegacy
         ? gql.listObjectsByType<PersonalStreamFields>(MOVE_STRUCT_TYPES.streamLegacy, maxPerType)
-        : Promise.resolve([]),
-      includeLegacy
-        ? gql.listObjectsByType<ChequeFields>(MOVE_STRUCT_TYPES.chequeLegacy, maxPerType)
         : Promise.resolve([]),
     ]);
 
@@ -211,11 +210,7 @@ export async function scanCrankCandidates(
     if (c) candidates.push(c);
   }
   for (const r of cheques) {
-    const c = evaluateExpiredCheque(r, nowMs, false);
-    if (c) candidates.push(c);
-  }
-  for (const r of legacyCheques) {
-    const c = evaluateExpiredCheque(r, nowMs, true);
+    const c = evaluateExpiredCheque(r, nowMs);
     if (c) candidates.push(c);
   }
 

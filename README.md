@@ -1,8 +1,8 @@
 # talise-sui-ops
 
-Clean-room direct-to-Sui CLI (`talise-sui`) and TypeScript SDK for Talise's live Sui mainnet Move contracts: on-chain payroll rosters (`talise-payroll` v2), tranche-vested team payroll streams (`talise-payroll-streams` v2), recurring standing orders (`talise-automations` v3), permissionless mainnet cranking, and wallet dust/exposure auditing.
+Independent direct-to-Sui CLI (`talise-sui`) and TypeScript SDK built against Talise's public Sui mainnet Move ABIs: on-chain payroll rosters (`talise-payroll` v2), tranche-vested team payroll streams (`talise-payroll-streams` v2), recurring standing orders (`talise-automations` v3), permissionless mainnet cranking, and wallet dust/exposure auditing.
 
-> **Community tool notice:** Built and maintained independently by [Olu (`Olalolo22`)](https://github.com/Olalolo22), not affiliated with or endorsed by Talise Technologies Limited. Written clean-room on `@mysten/sui` v2 (GraphQL + gRPC) directly against public Sui mainnet Move package ABIs — no zkLogin, no `app.talise.io` account, and no private backend access required.
+> **Community tool notice:** Built and maintained independently by [Olu (`Olalolo22`)](https://github.com/Olalolo22), not affiliated with or endorsed by Talise Technologies Limited. Written from scratch on `@mysten/sui` v2 (GraphQL + gRPC) directly against public Sui mainnet Move package ABIs — no zkLogin, no `app.talise.io` account, and no private backend access required.
 
 ---
 
@@ -10,8 +10,8 @@ Clean-room direct-to-Sui CLI (`talise-sui`) and TypeScript SDK for Talise's live
 
 Talise's core Move packages on Sui mainnet are permissionless by design:
 - **DAO / company treasuries** can manage on-chain `Team` rosters, fund `TeamStream<USDsui>` schedules, and run atomic single-PTB payouts directly from a standard Sui keypair or CI signer.
-- **Permissionless keepers** can execute due `StandingOrder` payments (`execute_due`), release due `TeamStream` tranches (`release_due_tranche`), claim accrued 1-to-1 `Stream` tranches (`claim_accrued`), and sweep expired `Cheque` escrows (`reclaim_expired`) — the Move contracts hardwire every destination and amount, so the cranker has zero custody or discretion.
-- **Users & operators** can audit any Sui address or `@handle` for overdue streams, reclaimable `TeamStream` rounding dust, destroyable terminal streams (storage rebates), expired unclaimed cheques, and `GoalVault` owner drift.
+- **Permissionless keepers** can execute due `StandingOrder` payments (`execute_due`), release due `TeamStream` tranches (`release_due_tranche`), claim accrued 1-to-1 `Stream` tranches (`claim_accrued`), and sweep expired `talise-pay` v2 `Cheque` escrows (`reclaim_expired`) — the Move contracts hardwire every destination and amount, so the cranker has zero custody or discretion.
+- **Users & operators** can audit any Sui address or `@handle` for overdue streams, reclaimable `TeamStream` rounding dust, destroyable terminal streams (storage rebates), expired unclaimed cheques (both v2 and legacy v1), and `GoalVault` owner drift.
 
 ---
 
